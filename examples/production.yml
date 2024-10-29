@@ -1,0 +1,44 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "5g"
+    tag: "{{.Name}}"
+
+services:
+  nginx:
+    image: <image_name>/nginx
+    container_name: nginx
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - FQDN=<fqdn>
+      - CERTBOT_EMAIL=<certbot-email>
+      - CLOUDFLARE_EMAIL=<cloudflare-email>
+      - CLOUDFLARE_API_KEY=<cloudflare-api-key>
+      - SERVICE_NAME=httpbin
+      - SERVICE_PORT=80
+    volumes:
+      - production_nginx_logs:/var/log/nginx
+      - production_certbot:/etc/letsencrypt
+      - production_certbot_logs:/var/log/letsencrypt
+    logging: *default-logging
+
+  httpbin:
+    image: kennethreitz/httpbin
+    container_name: httpbin
+    restart: always
+    depends_on:
+      - nginx
+
+volumes:
+  production_certbot:
+  production_certbot_logs:
+  production_nginx_logs:

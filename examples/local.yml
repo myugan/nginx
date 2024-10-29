@@ -1,0 +1,39 @@
+version: '3.8'
+
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "5g"
+    tag: "{{.Name}}"
+
+services:
+  nginx:
+    image: <image_name>/nginx
+    container_name: nginx
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    ports:
+      - "80:80"
+    environment:
+      - LOCAL=true
+      - FQDN=demo.local
+      - SERVICE_NAME=httpbin
+      - SERVICE_PORT=80
+    volumes:
+      - ./etc/conf.d/local/:/etc/nginx/conf.d/
+      - local_nginx_logs:/var/log/nginx
+    logging: *default-logging
+
+  httpbin:
+    image: kennethreitz/httpbin
+    container_name: httpbin
+    restart: always
+    depends_on:
+      - nginx
+
+volumes:
+  local_nginx_logs:
